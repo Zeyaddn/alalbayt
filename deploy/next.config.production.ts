@@ -12,8 +12,8 @@ const nextConfig: NextConfig = {
 
   // ضروري لـ GitHub Pages إذا الـ repo اسمه مش الـ username
   // مثال: https://username.github.io/repo-name/
-  // basePath: "/repo-name",
-  // assetPrefix: "/repo-name/",
+  basePath: "/alalbayt",
+  assetPrefix: "/alalbayt/",
 
   images: {
     unoptimized: true,

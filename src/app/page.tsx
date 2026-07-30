@@ -13,6 +13,7 @@ import {
   Phone,
   Sparkles,
 } from "lucide-react"
+
 import { api, resolveImageUrl } from "@/lib/api-client"
 
 export default function HomePage() {
@@ -25,19 +26,25 @@ export default function HomePage() {
   const [vodafoneAmount, setVodafoneAmount] = useState<number | string>(100)
   const [vodafoneSubmitting, setVodafoneSubmitting] = useState(false)
   useEffect(() => {
-    async function loadData() {
-      try {
-        const newsRes = await api.getNews()
-        if (newsRes.data) setNewsList(newsRes.data.slice(0, 3))
-      } catch (err) {
-        console.error("Error loading home data:", err)
-      } finally {
-        setLoading(false)
-      }
-    }
+  async function loadData() {
+    try {
+      const newsRes = await api.getNews()
 
-    loadData()
-  }, [])
+      console.log("NEWS RESPONSE:", newsRes)
+
+      if (newsRes.data) {
+        setNewsList(newsRes.data.slice(0, 3))
+      }
+
+    } catch (err) {
+      console.error("Error loading home data:", err)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  loadData()
+}, [])
 
   const handleVodafoneDonate = async () => {
     const amount = Number(vodafoneAmount)

@@ -39,14 +39,21 @@ async function request<T>(endpoint: string, options: ApiOptions = {}): Promise<T
     ...(fetchOptions.headers as Record<string, string>),
   };
 
-  const token = getToken();
-  if (token) {
-    headers['Authorization'] = `Bearer ${token}`;
-  }
+const token = getToken();
 
-  if (!(fetchOptions.body instanceof FormData)) {
-    headers['Content-Type'] = 'application/json';
-  }
+if (
+  token &&
+  endpoint.startsWith('/auth')
+) {
+  headers['Authorization'] = `Bearer ${token}`;
+}
+
+if (
+  fetchOptions.body &&
+  !(fetchOptions.body instanceof FormData)
+) {
+  headers['Content-Type'] = 'application/json';
+}
 
   const res = await fetch(url.toString(), { ...fetchOptions, headers });
 

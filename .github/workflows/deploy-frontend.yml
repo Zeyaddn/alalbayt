@@ -1,0 +1,79 @@
+name: Deploy Frontend to GitHub Pages
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'src/**'
+      - 'public/**'
+      - 'next.config.ts'
+      - 'package.json'
+      - 'package-lock.json'
+      - '.env.production'
+      - '.github/workflows/deploy-frontend.yml'
+
+  # تشغيل يدوي من GitHub UI
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# منع تشغيل أكثر من deploy واحد في نفس الوقت
+concurrency:
+  group: "pages"
+  cancel-in-progress: false
+
+jobs:
+  build:
+    name: Build Next.js
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Use production Next.js config (output export)
+        run: cp deploy/next.config.production.ts next.config.ts
+
+      - name: Build Next.js (production)
+        run: npm run build
+        env:
+          NODE_ENV: production
+          NEXT_PUBLIC_API_URL: ${{ secrets.NEXT_PUBLIC_API_URL || 'https://albaytcharity.kesug.com/api' }}
+          ADMIN_USERNAME: ${{ secrets.ADMIN_USERNAME }}
+          ADMIN_PASSWORD: ${{ secrets.ADMIN_PASSWORD }}
+          ADMIN_SECRET: ${{ secrets.ADMIN_SECRET }}
+          STRIPE_SECRET_KEY: ${{ secrets.STRIPE_SECRET_KEY }}
+
+      - name: Upload build artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          # إذا كان static export -> out/
+          # إذا كان standalone  -> .next/
+          path: ./out
+
+  deploy:
+    name: Deploy to GitHub Pages
+    needs: build
+    runs-on: ubuntu-latest
+
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4

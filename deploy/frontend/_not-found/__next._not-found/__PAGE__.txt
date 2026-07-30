@@ -1,0 +1,6 @@
+1:"$Sreact.fragment"
+2:I[22016,["/_next/static/chunks/44yy-xkyrsuk7.js","/_next/static/chunks/14mrh2-p_w84d.js"],""]
+3:I[97367,["/_next/static/chunks/44yy-xkyrsuk7.js","/_next/static/chunks/14mrh2-p_w84d.js"],"OutletBoundary"]
+4:"$Sreact.suspense"
+0:{"rsc":["$","$1","c",{"children":[["$","div",null,{"dir":"rtl","className":"flex min-h-[70vh] flex-col items-center justify-center px-4 text-center","children":[["$","div",null,{"className":"text-8xl font-bold text-emerald-600 dark:text-emerald-400","children":"٤٠٤"}],["$","h1",null,{"className":"mt-4 text-2xl font-bold text-gray-900 dark:text-white","children":"الصفحة غير موجودة"}],["$","p",null,{"className":"mt-2 text-gray-600 dark:text-gray-400","children":"عذراً، الصفحة التي تبحث عنها غير موجودة."}],["$","$L2",null,{"href":"/","className":"mt-6 inline-block rounded-xl bg-emerald-600 px-6 py-2.5 text-sm font-medium text-white transition hover:bg-emerald-700","children":"العودة للرئيسية"}]]}],null,["$","$L3",null,{"children":["$","$4",null,{"name":"Next.MetadataOutlet","children":"$@5"}]}]]}],"isPartial":false,"staleTime":300,"varyParams":null,"buildId":"stdUuVPGNYhuemEfCWXle"}
+5:null

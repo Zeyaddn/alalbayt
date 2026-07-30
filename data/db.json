@@ -1,0 +1,59 @@
+{
+  "settings": {
+    "siteName": "جمعية آل البيت الخيرية",
+    "phone": "01062989564",
+    "whatsapp": "201062989564",
+    "email": "info@alalbayt-charity.org",
+    "address": "اويش الحجر - حي الشيخ ابوغنيم - آل البيت",
+    "licenseNumber": "مشهرة برقم 4582 لسنة 2012",
+    "vodafoneCash": "01062989564"
+  },
+  "news": [
+    {
+      "id": "news-1785326390685",
+      "title": "الحاج عبد",
+      "slug": "الحاج-عبده",
+      "summary": "الحاج عبده",
+      "content": "حصل",
+      "image": "/uploads/img_1785326375266_lf8khk.jpg",
+      "category": "مشاريع جديدة",
+      "author": "إدارة الجمعية",
+      "publishedAt": "2026-07-29",
+      "featured": true,
+      "views": 0
+    }
+  ],
+  "programs": [
+    {
+      "id": "prog-1785326804269",
+      "title": "حمله ال البيت",
+      "slug": "حمله-ال-البيت",
+      "description": "لم فلوس",
+      "category": "رعاية طبية",
+      "targetAmount": 10000,
+      "raisedAmount": 0,
+      "donorCount": 0,
+      "image": "/uploads/img_1785326796925_8wl8nm.jpg",
+      "featured": false,
+      "status": "active",
+      "createdAt": "2026-07-29"
+    }
+  ],
+  "requests": [
+    {
+      "id": "req-1785326642927",
+      "applicantName": "ذياد الاسد",
+      "nationalId": "15815555555555",
+      "phone": "010225689+97",
+      "address": "حي الشفريه",
+      "requestType": "housing",
+      "details": "مساعده\n",
+      "familyMembers": 4,
+      "monthlyIncome": 1500,
+      "status": "approved",
+      "createdAt": "2026-07-29",
+      "adminNotes": ""
+    }
+  ],
+  "donations": []
+}

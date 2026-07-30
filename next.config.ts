@@ -4,6 +4,15 @@ const nextConfig: NextConfig = {
   images: {
     unoptimized: true,
   },
+
+  async rewrites() {
+    return [
+      {
+        source: "/api/:path*",
+        destination: "https://albaytcharity.kesug.com/api/:path*",
+      },
+    ];
+  },
 };
 
 export default nextConfig;

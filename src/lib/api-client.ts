@@ -1,5 +1,8 @@
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:8000/api';
-const APP_URL = API_BASE.replace(/\/api$/, '');
+const API_BASE =
+  process.env.NEXT_PUBLIC_API_URL ||
+  (typeof window !== "undefined"
+    ? "/api"
+    : "https://albaytcharity.kesug.com/api");const APP_URL = API_BASE.replace(/\/api$/, '');
 
 export function resolveImageUrl(url: string | null | undefined): string {
   if (!url) return '/images/placeholder.svg';

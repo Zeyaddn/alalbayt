@@ -1,0 +1,86 @@
+name: Deploy Full Website to InfinityFree
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    name: Build & Deploy
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.2'
+
+      - name: Install Frontend Dependencies
+        run: npm ci
+
+      - name: Install Backend Dependencies
+        working-directory: ./laravel-backend
+        run: composer install --no-dev --optimize-autoloader
+
+      - name: Build Next.js & Prepare Folders
+        run: |
+          # 1. Prepare Next.config without basePath for root domain
+          cp deploy/next.config.production.ts next.config.ts
+
+          # 2. Build Next.js
+          export NODE_ENV=production
+          export NEXT_PUBLIC_API_URL="https://albaytcharity.kesug.com/api"
+          npm run build
+
+          # 3. Create deploy folders
+          mkdir -p deploy-infinity/htdocs/backend
+
+          # 4. Copy Frontend (out) to htdocs
+          cp -r out/* deploy-infinity/htdocs/
+
+          # 5. Copy Backend to htdocs/backend
+          rsync -av --exclude 'node_modules' --exclude '.git' --exclude 'tests' --exclude '.env' --exclude '.env.backup' laravel-backend/ deploy-infinity/htdocs/backend/
+
+          # 6. Create backend storage folders
+          mkdir -p deploy-infinity/htdocs/backend/storage/framework/cache/data
+          mkdir -p deploy-infinity/htdocs/backend/storage/framework/sessions
+          mkdir -p deploy-infinity/htdocs/backend/storage/framework/views
+          mkdir -p deploy-infinity/htdocs/backend/storage/logs
+
+          # 7. Create backend .env
+          echo "${{ secrets.PRODUCTION_ENV }}" > deploy-infinity/htdocs/backend/.env
+
+          # 8. Create root .htaccess to route API/storage calls
+          cat << 'EOF' > deploy-infinity/htdocs/.htaccess
+          <IfModule mod_rewrite.c>
+              RewriteEngine On
+              RewriteCond %{REQUEST_URI} ^/api/ [NC]
+              RewriteRule ^api/(.*)$ backend/public/api/$1 [L,QSA]
+              RewriteCond %{REQUEST_URI} ^/storage/ [NC]
+              RewriteRule ^storage/(.*)$ backend/storage/app/public/$1 [L,QSA]
+          </IfModule>
+          EOF
+
+      - name: Sync files to InfinityFree via FTP
+        uses: SamKirkland/FTP-Deploy-Action@v4.3.5
+        with:
+          server: ${{ secrets.FTP_SERVER }}
+          username: ${{ secrets.FTP_USERNAME }}
+          password: ${{ secrets.FTP_PASSWORD }}
+          local-dir: ./deploy-infinity/htdocs/
+          server-dir: /htdocs/
+          exclude: |
+            **/.git*
+            **/.git*/**
+            **/node_modules/**

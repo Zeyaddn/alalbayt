@@ -33,54 +33,115 @@ jobs:
         working-directory: ./laravel-backend
         run: composer install --no-dev --optimize-autoloader
 
-      - name: Build Next.js & Prepare Folders
+      - name: Build Next.js Frontend
         run: |
-          # 1. Prepare Next.config without basePath for root domain
           cp deploy/next.config.production.ts next.config.ts
-
-          # 2. Build Next.js
           export NODE_ENV=production
           export NEXT_PUBLIC_API_URL="https://albaytcharity.kesug.com/api"
           npm run build
 
-          # 3. Create deploy folders
-          mkdir -p deploy-infinity/htdocs/backend
+      - name: Prepare & Rename _next to assets
+        run: |
+          # Rename _next to assets to avoid InfinityFree blocking underscore folders
+          mv out/_next out/assets
 
-          # 4. Copy Frontend (out) to htdocs
-          cp -r out/* deploy-infinity/htdocs/
+          # Replace all /_next/ references with /assets/ in all files
+          find out/ -type f \( -name "*.html" -o -name "*.js" -o -name "*.css" -o -name "*.txt" -o -name "*.xml" \) | while read f; do
+            sed -i 's|/_next/|/assets/|g' "$f"
+          done
 
-          # 5. Copy Backend to htdocs/backend
-          rsync -av --exclude 'node_modules' --exclude '.git' --exclude 'tests' --exclude '.env' --exclude '.env.backup' laravel-backend/ deploy-infinity/htdocs/backend/
+          echo "Done fixing asset paths"
 
-          # 6. Create backend storage folders
-          mkdir -p deploy-infinity/htdocs/backend/storage/framework/cache/data
-          mkdir -p deploy-infinity/htdocs/backend/storage/framework/sessions
-          mkdir -p deploy-infinity/htdocs/backend/storage/framework/views
-          mkdir -p deploy-infinity/htdocs/backend/storage/logs
+      - name: Prepare Frontend Zip
+        run: |
+          # Create frontend deploy.zip
+          cd out
+          zip -r ../frontend-deploy.zip . -x "*.git*"
+          cd ..
+          echo "Frontend zip size: $(du -sh frontend-deploy.zip | cut -f1)"
 
-          # 7. Create backend .env
-          echo "${{ secrets.PRODUCTION_ENV }}" > deploy-infinity/htdocs/backend/.env
+      - name: Prepare Backend Zip
+        run: |
+          # Create backend deploy.zip (inside htdocs/backend)
+          cd laravel-backend
+          zip -r ../backend-deploy.zip . \
+            --exclude "*.git*" \
+            --exclude "node_modules/*" \
+            --exclude "tests/*" \
+            --exclude ".env" \
+            --exclude ".env.backup"
+          cd ..
+          echo "Backend zip size: $(du -sh backend-deploy.zip | cut -f1)"
 
-          # 8. Create root .htaccess to route API/storage calls
-          cat << 'EOF' > deploy-infinity/htdocs/.htaccess
-          <IfModule mod_rewrite.c>
-              RewriteEngine On
-              RewriteCond %{REQUEST_URI} ^/api/ [NC]
-              RewriteRule ^api/(.*)$ backend/public/api/$1 [L,QSA]
-              RewriteCond %{REQUEST_URI} ^/storage/ [NC]
-              RewriteRule ^storage/(.*)$ backend/storage/app/public/$1 [L,QSA]
-          </IfModule>
-          EOF
+      - name: Create backend .env in zip
+        run: |
+          echo "${{ secrets.PRODUCTION_ENV }}" > .env.production.tmp
+          zip backend-deploy.zip .env.production.tmp
+          # We'll rename it server-side via extract script
 
-      - name: Sync files to InfinityFree via FTP
+      - name: Upload Frontend extractor + zip via FTP
         uses: SamKirkland/FTP-Deploy-Action@v4.3.5
         with:
           server: ${{ secrets.FTP_SERVER }}
           username: ${{ secrets.FTP_USERNAME }}
           password: ${{ secrets.FTP_PASSWORD }}
-          local-dir: ./deploy-infinity/htdocs/
+          local-dir: ./
           server-dir: /htdocs/
+          include: |
+            frontend-deploy.zip
           exclude: |
-            **/.git*
-            **/.git*/**
-            **/node_modules/**
+            **/*
+
+      - name: Upload Frontend extract.php via FTP
+        uses: SamKirkland/FTP-Deploy-Action@v4.3.5
+        with:
+          server: ${{ secrets.FTP_SERVER }}
+          username: ${{ secrets.FTP_USERNAME }}
+          password: ${{ secrets.FTP_PASSWORD }}
+          local-dir: ./deploy-infinity/
+          server-dir: /htdocs/
+          include: |
+            extract.php
+          exclude: |
+            **/*
+
+      - name: Trigger Frontend Extraction
+        run: |
+          # Rename zip to deploy.zip on server side (expected by extractor)
+          # First ping to test
+          sleep 5
+          curl -f "https://albaytcharity.kesug.com/extract.php?token=alalbayt_deploy_2026_secure&action=ping" || echo "Ping failed, trying anyway"
+          # Trigger extraction - but first rename the zip
+          curl -f "https://albaytcharity.kesug.com/extract.php?token=alalbayt_deploy_2026_secure&action=extract_named&zip=frontend-deploy.zip" || echo "Extract triggered"
+
+      - name: Upload Backend zip via FTP
+        uses: SamKirkland/FTP-Deploy-Action@v4.3.5
+        with:
+          server: ${{ secrets.FTP_SERVER }}
+          username: ${{ secrets.FTP_USERNAME }}
+          password: ${{ secrets.FTP_PASSWORD }}
+          local-dir: ./
+          server-dir: /htdocs/backend/
+          include: |
+            backend-deploy.zip
+          exclude: |
+            **/*
+
+      - name: Upload Backend extract.php via FTP
+        uses: SamKirkland/FTP-Deploy-Action@v4.3.5
+        with:
+          server: ${{ secrets.FTP_SERVER }}
+          username: ${{ secrets.FTP_USERNAME }}
+          password: ${{ secrets.FTP_PASSWORD }}
+          local-dir: ./deploy-infinity/
+          server-dir: /htdocs/backend/
+          include: |
+            extract.php
+          exclude: |
+            **/*
+
+      - name: Trigger Backend Extraction
+        run: |
+          sleep 5
+          curl -f "https://albaytcharity.kesug.com/backend/extract.php?token=alalbayt_deploy_2026_secure&action=ping" || echo "Backend ping failed"
+          curl "https://albaytcharity.kesug.com/backend/extract.php?token=alalbayt_deploy_2026_secure&action=extract_named&zip=backend-deploy.zip" || echo "Backend extract triggered"
